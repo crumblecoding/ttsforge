@@ -141,6 +141,7 @@ class TestConvertCommand:
         assert "--disable-short-sentence" in result.output
         assert "--enable-short-sentence" not in result.output
         assert "--seed" in result.output
+        assert "--replace-non-book-abbreviations" in result.output
 
     def test_read_help_has_disable_short_sentence_only(self, runner):
         """Read command should only expose the disable short-sentence flag."""
@@ -340,6 +341,16 @@ class TestListCommand:
         """Should require input file."""
         result = runner.invoke(app, ["list"])
         assert result.exit_code != 0
+
+
+class TestReadCommand:
+    """Tests for read command."""
+
+    def test_read_help(self, runner):
+        """Should show read command help."""
+        result = runner.invoke(main, ["read", "--help"])
+        assert result.exit_code == 0
+        assert "--replace-non-book-abbreviations" in result.output
 
 
 class TestInfoCommand:

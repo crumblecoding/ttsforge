@@ -657,6 +657,7 @@ def convert(  # noqa: C901
     ssmd_audio_max_duration: float | None = None,
     embed_ssmd_voice_bindings: bool | None = None,
     embed_ssmd_pause_defaults: bool | None = None,
+    replace_non_book_abbreviations: bool | None = None,
 ) -> None:
     """Convert an EPUB file to an audiobook.
 
@@ -725,6 +726,11 @@ def convert(  # noqa: C901
         config,
         subchapter_markers=subchapter_markers,
     )
+    if replace_non_book_abbreviations:
+        text_postprocess_options = replace(
+            text_postprocess_options,
+            replace_non_book_abbreviations=True,
+        )
     resolved_defaults = resolve_conversion_defaults(
         config,
         {
@@ -2409,6 +2415,7 @@ def read(  # noqa: C901
     pause_mode: str | None,
     enable_short_sentence: bool | None,
     short_sentence: str | None,
+    replace_non_book_abbreviations: bool | None,
 ) -> None:
     """Read an EPUB or text file aloud with streaming playback.
 
@@ -2473,6 +2480,11 @@ def read(  # noqa: C901
         ModelQuality, config.get("model_quality", DEFAULT_MODEL_QUALITY)
     )
     text_postprocess_options = resolve_text_postprocess_options(config)
+    if replace_non_book_abbreviations:
+        text_postprocess_options = replace(
+            text_postprocess_options,
+            replace_non_book_abbreviations=True,
+        )
     resolved_defaults = resolve_conversion_defaults(
         config,
         {

@@ -80,6 +80,7 @@ class InputReader:
 
         Args:
             file_path: Path to the input file (EPUB, TXT, or SSMD)
+            postprocess_options: Extracted text postprocessing options.
         """
         self.file_path = Path(file_path)
         self.postprocess_options = postprocess_options or TextPostprocessOptions()
@@ -357,6 +358,7 @@ class InputReader:
             end_pos = len(full_text)
 
         content = full_text[start_pos:end_pos].strip()
+        content = postprocess_extracted_text(content, self.postprocess_options)
 
         # Try to split by chapters
         # Pattern 1: "CHAPTER X" or "Chapter X" at start of line

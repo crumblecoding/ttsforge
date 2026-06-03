@@ -185,6 +185,7 @@ DEFAULT_CONFIG = {
     "default_split_mode": "auto",
     "default_content_mode": "chapters",  # Content mode for read: chapters or pages
     "default_page_size": 2000,  # Synthetic page size in characters for pages mode
+    "replace_non_book_abbreviations": False,
     "pause_clause": 0.3,
     "pause_sentence": 0.5,
     "pause_paragraph": 0.9,
