@@ -719,7 +719,6 @@ class TTSConverter:
                             self.options.language = state.language
                             self.options.speed = state.speed
                             self.options.split_mode = state.split_mode
-                            self.options.output_format = state.output_format
                             self.options.silence_between_chapters = (
                                 state.silence_between_chapters
                             )

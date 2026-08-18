@@ -4,6 +4,8 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
+
 from ttsforge.conversion import (
     SPLIT_MODES,
     Chapter,
@@ -250,6 +252,65 @@ class TestConversionOptions:
 
         options = ConversionOptions(voice_database=Path("/tmp/voices.db"))
         assert options.voice_database == Path("/tmp/voices.db")
+
+
+def test_resume_keeps_requested_output_format(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Resuming old chapter WAVs should not force the old final container."""
+    from ttsforge import conversion
+    from ttsforge.conversion import TTSConverter
+
+    output_path = tmp_path / "Book.mp3"
+    work_dir = tmp_path / ".Book_chapters"
+    work_dir.mkdir()
+    (work_dir / "chapter_001.wav").write_bytes(b"")
+
+    state = ConversionState(
+        output_file=str(tmp_path / "Book.m4b"),
+        work_dir=str(work_dir),
+        voice="af_bella",
+        language="a",
+        speed=1.0,
+        split_mode="auto",
+        output_format="m4b",
+        chapters=[
+            ChapterState(
+                index=0,
+                title="Chapter 1",
+                content_hash=_hash_content("Hello"),
+                completed=True,
+                audio_file="chapter_001.wav",
+                duration=1.0,
+                char_count=5,
+            )
+        ],
+    )
+    state.save(work_dir / "Book_state.json")
+
+    seen_formats: list[str] = []
+
+    class FakeMerger:
+        def merge_chapter_wavs(self, *args: object) -> None:
+            seen_formats.append(args[4].fmt)
+
+    monkeypatch.setattr(conversion, "prevent_sleep_start", lambda: None)
+    monkeypatch.setattr(conversion, "prevent_sleep_end", lambda: None)
+
+    converter = TTSConverter(
+        ConversionOptions(title="Book", output_format="mp3", voice="af_bella")
+    )
+    converter._init_runner = lambda: None
+    converter._merger = FakeMerger()
+
+    result = converter.convert_chapters_resumable(
+        [Chapter(title="Chapter 1", content="Hello")],
+        output_path,
+        resume=True,
+    )
+
+    assert result.success is True
+    assert seen_formats == ["mp3"]
 
 
 class TestSplitModes:

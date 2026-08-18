@@ -95,9 +95,9 @@ class AudioMerger:
 
         with concat_file.open("w", encoding="utf-8") as f:
             for i, ch in enumerate(chapter_files):
-                f.write(f"file '{ch.absolute()}'\n")
+                f.write(f"file '{_ffconcat_path(ch)}'\n")
                 if i < len(chapter_files) - 1 and meta.silence_between_chapters > 0:
-                    f.write(f"file '{silence_file.absolute()}'\n")
+                    f.write(f"file '{_ffconcat_path(silence_file)}'\n")
 
         cmd = [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file)]
 
@@ -137,10 +137,14 @@ class AudioMerger:
             cmd += ["-c:a", "pcm_s16le"]
 
         cmd.append(str(output_path))
-        proc = create_process(cmd, suppress_output=True)
-        rc = proc.wait()
-        if rc != 0:
-            raise RuntimeError("ffmpeg failed while merging chapters")
+        proc = create_process(cmd, capture_output=True)
+        if proc.returncode != 0:
+            stderr = _format_process_error(proc.stderr)
+            raise RuntimeError(
+                "ffmpeg failed while merging chapters"
+                f" (concat list: {concat_file})"
+                f"{stderr}"
+            )
 
         concat_file.unlink(missing_ok=True)
         silence_file.unlink(missing_ok=True)
@@ -178,3 +182,19 @@ class AudioMerger:
                 "",
             ]
         return "\n".join(lines)
+
+
+def _ffconcat_path(path: Path) -> str:
+    """Return a path escaped for ffmpeg concat demuxer single-quoted strings."""
+    return path.absolute().as_posix().replace("'", r"'\''")
+
+
+def _format_process_error(stderr: str | bytes | None) -> str:
+    if not stderr:
+        return ""
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode(errors="replace")
+    stderr = stderr.strip()
+    if not stderr:
+        return ""
+    return f": {stderr}"
